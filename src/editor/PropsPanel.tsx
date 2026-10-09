@@ -1,18 +1,28 @@
+import { useEffect, useRef } from 'react';
 import { Tile, TILE_NAMES } from '../types';
 import { useProject } from '../state/projectStore';
+import { paintTileArt } from '../engine/pixelTiles';
 import SpriteEditor from './SpriteEditor';
 
 const BRUSHES: Tile[] = [Tile.Solid, Tile.Platform, Tile.Spike, Tile.Coin, Tile.Spawn, Tile.Goal, Tile.Deco];
 
-const BRUSH_ICONS: Record<number, string> = {
-  [Tile.Solid]: '🧱',
-  [Tile.Platform]: '🪵',
-  [Tile.Spike]: '🔺',
-  [Tile.Coin]: '🪙',
-  [Tile.Spawn]: '▶️',
-  [Tile.Goal]: '🏁',
-  [Tile.Deco]: '🌿',
-};
+/** Mini pixel-art preview of a tile, painted with the same art as the game. */
+function TileIcon({ tile }: { tile: Tile }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current!;
+    const S = 32;
+    c.width = S;
+    c.height = S;
+    const g = c.getContext('2d')!;
+    g.clearRect(0, 0, S, S);
+    paintTileArt(g, tile, 3, 5, 0, 0, S, {
+      grassTop: true,
+      coinFrame: 0,
+    });
+  }, [tile]);
+  return <canvas ref={ref} className="tile-icon" width={32} height={32} />;
+}
 
 export default function PropsPanel() {
   const tool = useProject((s) => s.tool);
@@ -44,7 +54,7 @@ export default function PropsPanel() {
               onClick={() => setBrush(b)}
               title={TILE_NAMES[b]}
             >
-              <span>{BRUSH_ICONS[b]}</span>
+              <span className="tile-icon-wrap"><TileIcon tile={b} /></span>
               <small>{TILE_NAMES[b]}</small>
             </button>
           ))}

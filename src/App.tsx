@@ -45,8 +45,8 @@ export default function App() {
         <div className="brand">
           <span className="logo">🎮</span>
           <div>
-            <h1>Platformer Maker</h1>
-            <p>draw levels • create enemies • export game</p>
+            <h1>PLATFORMER MAKER</h1>
+            <p>★ DRAW LEVELS ★ MAKE ENEMIES ★ EXPORT GAME ★</p>
           </div>
         </div>
         <div className="top-actions">
@@ -60,15 +60,15 @@ export default function App() {
           <button className="mini" onClick={() => setZoom(zoom + 0.2)}>+</button>
           {!isPlaying ? (
             <button className="primary" onClick={() => setPlaying(true)}>
-              ▶ Playtest
+              ▶ START
             </button>
           ) : (
             <button className="primary stop" onClick={() => setPlaying(false)}>
-              ■ Stop
+              ■ STOP
             </button>
           )}
           <button className="export" onClick={() => downloadGame(project)}>
-            ⬇ Export game.html
+            ⬇ EXPORT GAME
           </button>
         </div>
       </header>
@@ -79,7 +79,7 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        <span>Paint tiles on the left canvas • pick an enemy → click map to place • stomp enemies in playtest • Export gives you one shareable .html file</span>
+        <span>1UP: PAINT TILES • PLACE ENEMIES • SET SPAWN • PRESS START TO PLAY • EXPORT = 1 HTML FILE</span>
       </footer>
 
       <EnemyCreator />

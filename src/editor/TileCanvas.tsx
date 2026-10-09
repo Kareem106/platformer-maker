@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Tile, TILE_SIZE } from '../types';
 import { useProject } from '../state/projectStore';
 import { pixelsToCanvas } from '../engine/renderer';
+import { hasGrassTop, paintTileArt } from '../engine/pixelTiles';
 
 const TILE_COLORS: Record<number, string> = {
   [Tile.Solid]: '#7d5a3c',
@@ -43,7 +44,9 @@ export default function TileCanvas() {
       for (let x = 0; x < level.w; x++) {
         const t = level.tiles[y]![x]!;
         if (t === Tile.Empty) continue;
-        drawEditorTile(g, t, x * CELL, y * CELL, CELL);
+        paintTileArt(g, t, x, y, x * CELL, y * CELL, CELL, {
+          grassTop: hasGrassTop(level.tiles, x, y),
+        });
       }
     }
 
@@ -187,58 +190,4 @@ export default function TileCanvas() {
       </div>
     </div>
   );
-}
-
-function drawEditorTile(g: CanvasRenderingContext2D, t: number, px: number, py: number, s: number) {
-  if (t === Tile.Solid) {
-    g.fillStyle = '#6b4a2f';
-    g.fillRect(px, py, s, s);
-    g.fillStyle = '#7d5a3c';
-    g.fillRect(px + 2, py + 2, s - 4, s - 4);
-    g.fillStyle = '#5fce5c';
-    g.fillRect(px, py, s, Math.max(3, s * 0.22));
-  } else if (t === Tile.Platform) {
-    g.fillStyle = '#c98d4e';
-    g.fillRect(px, py + s * 0.3, s, s * 0.32);
-  } else if (t === Tile.Spike) {
-    g.fillStyle = '#2b2b36';
-    g.fillRect(px, py, s, s);
-    g.fillStyle = '#d8dce6';
-    const n = 4;
-    for (let i = 0; i < n; i++) {
-      const sx = px + (i * s) / n;
-      g.beginPath();
-      g.moveTo(sx, py + s);
-      g.lineTo(sx + s / n / 2, py + s * 0.25);
-      g.lineTo(sx + s / n, py + s);
-      g.closePath();
-      g.fill();
-    }
-  } else if (t === Tile.Coin) {
-    g.fillStyle = 'rgba(255,217,77,0.2)';
-    g.fillRect(px, py, s, s);
-    g.fillStyle = '#ffd94d';
-    g.beginPath();
-    g.arc(px + s / 2, py + s / 2, s * 0.28, 0, Math.PI * 2);
-    g.fill();
-  } else if (t === Tile.Spawn) {
-    g.fillStyle = 'rgba(92,255,138,0.3)';
-    g.fillRect(px, py, s, s);
-    g.fillStyle = '#5cff8a';
-    g.font = `bold ${Math.max(9, s * 0.3)}px system-ui`;
-    g.fillText('▶', px + s * 0.32, py + s * 0.65);
-  } else if (t === Tile.Goal) {
-    g.fillStyle = 'rgba(255,217,77,0.3)';
-    g.fillRect(px, py, s, s);
-    g.fillStyle = '#3a2f00';
-    g.font = `bold ${Math.max(8, s * 0.26)}px system-ui`;
-    g.fillText('🏁', px + s * 0.15, py + s * 0.68);
-  } else if (t === Tile.Deco) {
-    g.strokeStyle = '#3f9e4d';
-    g.lineWidth = 2;
-    g.beginPath();
-    g.moveTo(px + s * 0.3, py + s);
-    g.quadraticCurveTo(px + s * 0.5, py + s * 0.4, px + s * 0.7, py + s * 0.3);
-    g.stroke();
-  }
 }

@@ -1,4 +1,5 @@
 import { Tile, TILE_SIZE, type PixelGrid } from '../types';
+import { hasGrassTop, paintTileArt } from './pixelTiles';
 import type { GameState } from './simulation';
 
 // Cache offscreen canvases for pixel sprites
@@ -23,11 +24,6 @@ export function pixelsToCanvas(pixels: PixelGrid, scale = 2): HTMLCanvasElement 
     }
   spriteCache.set(key, c);
   return c;
-}
-
-function tileExposedTop(tiles: number[][], tx: number, ty: number): boolean {
-  if (ty === 0) return true;
-  return tiles[ty - 1]?.[tx] !== Tile.Solid;
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, st: GameState): void {
@@ -202,96 +198,26 @@ function drawTile(
   py: number,
   time: number,
 ): void {
-  if (t === Tile.Solid) {
-    ctx.fillStyle = '#6b4a2f';
-    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-    ctx.fillStyle = '#7d5a3c';
-    ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-    if (tileExposedTop(tiles, tx, ty)) {
-      ctx.fillStyle = '#5fce5c';
-      ctx.fillRect(px, py, TILE_SIZE, 9);
-      ctx.fillStyle = '#8de68a';
-      ctx.fillRect(px, py, TILE_SIZE, 4);
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    ctx.fillRect(px, py + TILE_SIZE - 3, TILE_SIZE, 3);
-  } else if (t === Tile.Platform) {
-    ctx.fillStyle = '#a06a35';
-    ctx.fillRect(px, py + 6, TILE_SIZE, 10);
-    ctx.fillStyle = '#c98d4e';
-    ctx.fillRect(px, py + 6, TILE_SIZE, 4);
-    ctx.fillStyle = '#5e3a18';
-    for (let x = 4; x < TILE_SIZE; x += 8) ctx.fillRect(px + x, py + 6, 2, 10);
-  } else if (t === Tile.Spike) {
-    ctx.fillStyle = '#2b2b36';
-    ctx.fillRect(px, py + 18, TILE_SIZE, 14);
-    ctx.fillStyle = '#d8dce6';
-    for (let i = 0; i < 4; i++) {
-      const sx = px + i * 8;
-      ctx.beginPath();
-      ctx.moveTo(sx, py + 32);
-      ctx.lineTo(sx + 4, py + 10);
-      ctx.lineTo(sx + 8, py + 32);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    for (let i = 0; i < 4; i++) {
-      ctx.fillRect(px + i * 8 + 3, py + 16, 2, 6);
-    }
-  } else if (t === Tile.Coin) {
+  if (t === Tile.Coin) {
     const bob = Math.sin(time * 4 + (tx + ty) * 0.7) * 3;
-    const squish = Math.abs(Math.cos(time * 3 + tx * 0.5));
-    const cx = px + 16;
-    const cy = py + 16 + bob;
-    ctx.fillStyle = '#8a6d00';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + 8, 8, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffd94d';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, 8, 8 * (0.35 + 0.65 * squish), 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff3c4';
-    ctx.beginPath();
-    ctx.ellipse(cx - 2, cy - 2, 3, 4 * (0.35 + 0.65 * squish), -0.3, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (t === Tile.Spawn) {
-    ctx.fillStyle = 'rgba(92,255,138,0.18)';
-    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-    ctx.fillStyle = '#5cff8a';
-    const b = Math.sin(time * 5) * 3;
-    ctx.beginPath();
-    ctx.moveTo(px + 8, py + 8 + b);
-    ctx.lineTo(px + 24, py + 16 + b);
-    ctx.lineTo(px + 8, py + 24 + b);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = 'bold 9px system-ui';
-    ctx.fillText('START', px + 2, py + 9);
-  } else if (t === Tile.Goal) {
-    ctx.fillStyle = 'rgba(255,217,77,0.15)';
-    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-    ctx.fillStyle = '#7a5b00';
-    ctx.fillRect(px + 14, py + 2, 4, 28);
-    ctx.fillStyle = '#ffd94d';
-    const wave = Math.sin(time * 6 + ty) * 2;
-    ctx.fillRect(px + 18, py + 4 + wave * 0.3, 12, 9);
-    ctx.fillStyle = '#222';
-    ctx.font = 'bold 8px system-ui';
-    ctx.fillText('GOAL', px + 1, py + 9);
-  } else if (t === Tile.Deco) {
-    // bush / grass tuft, non-collidable
-    ctx.strokeStyle = '#3f9e4d';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    for (let i = 0; i < 5; i++) {
-      const sx = px + 5 + i * 5.5;
-      ctx.beginPath();
-      ctx.moveTo(sx, py + 30);
-      ctx.quadraticCurveTo(sx + 2, py + 16, sx + (i % 2 ? 5 : -5), py + 10);
-      ctx.stroke();
-    }
+    const frame = Math.floor(time * 5 + tx * 0.6 + ty) % 2;
+    paintTileArt(ctx, t, tx, ty, px, py + bob, TILE_SIZE, { coinFrame: frame });
+    return;
   }
+  if (t === Tile.Spawn) {
+    const pulse = 0.14 + 0.08 * Math.sin(time * 5);
+    ctx.fillStyle = `rgba(92,255,138,${pulse.toFixed(3)})`;
+    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+  } else if (t === Tile.Goal) {
+    const pulse = 0.1 + 0.06 * Math.sin(time * 4 + ty);
+    ctx.fillStyle = `rgba(255,217,77,${pulse.toFixed(3)})`;
+    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+  } else if (t === Tile.Solid || t === Tile.Platform || t === Tile.Spike || t === Tile.Deco) {
+    // painted below via shared pixel art
+  } else {
+    return;
+  }
+  paintTileArt(ctx, t, tx, ty, px, py, TILE_SIZE, {
+    grassTop: hasGrassTop(tiles, tx, ty),
+  });
 }
